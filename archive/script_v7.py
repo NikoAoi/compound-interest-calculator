@@ -45,6 +45,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         # --- 字体设置 ---
         self.title_font = ctk.CTkFont(family="Helvetica", size=26, weight="bold")
         self.label_font = ctk.CTkFont(family="Helvetica", size=14)
+        # ... (其余字体定义与之前相同) ...
         self.helper_font = ctk.CTkFont(family="Helvetica", size=12, slant="italic")
         self.button_font = ctk.CTkFont(family="Helvetica", size=14, weight="bold")
         self.result_font = ctk.CTkFont(family="Helvetica", size=18, weight="bold")
@@ -54,7 +55,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         main_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         main_frame.grid_columnconfigure(1, weight=1)
         
-        # --- UI组件部分 ---
+        # --- UI组件部分 (与之前版本完全相同，此处省略) ---
         title_label = ctk.CTkLabel(main_frame, text="复利的力量 (高级交互版)", font=self.title_font)
         title_label.grid(row=0, column=0, columnspan=2, padx=20, pady=(10, 20))
         ctk.CTkLabel(main_frame, text="初始本金 (P)", font=self.label_font).grid(row=1, column=0, padx=20, pady=10, sticky="w")
@@ -84,25 +85,15 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         self.duration_unit_selector.set("年")
         self.calculate_button = ctk.CTkButton(main_frame, text="计算并生成图表", font=self.button_font, command=self.calculate, height=40)
         self.calculate_button.grid(row=6, column=0, columnspan=2, padx=20, pady=(30, 20), sticky="ew")
-        
-        # --- 结果显示区域 ---
         result_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         result_frame.grid(row=7, column=0, columnspan=2, padx=20, pady=10, sticky="ew")
         result_frame.grid_columnconfigure(0, weight=1)
-        
         ctk.CTkLabel(result_frame, text="本息总额 (Total Amount)", font=self.result_font, text_color=("blue", "cyan")).grid(row=0, column=0, pady=(10,5))
         self.total_amount_label = ctk.CTkLabel(result_frame, text="¥ 0.00", font=self.result_value_font, wraplength=600)
         self.total_amount_label.grid(row=1, column=0, padx=10, pady=(0,10))
-        
         ctk.CTkLabel(result_frame, text="总收益 (Total Interest)", font=self.result_font, text_color=("green", "#33FF99")).grid(row=2, column=0, pady=(10,5))
         self.total_interest_label = ctk.CTkLabel(result_frame, text="¥ 0.00", font=self.result_value_font, wraplength=600)
-        self.total_interest_label.grid(row=3, column=0, padx=10, pady=(0,10)) # <<< 修改: 调整了底部的padding
-        
-        # <<< 新增: 收益率显示部分
-        ctk.CTkLabel(result_frame, text="总收益率 (Return Rate)", font=self.result_font, text_color=("orange", "#FFA500")).grid(row=4, column=0, pady=(10,5))
-        self.return_rate_label = ctk.CTkLabel(result_frame, text="0.00 %", font=self.result_value_font, wraplength=600)
-        self.return_rate_label.grid(row=5, column=0, padx=10, pady=(0,20))
-        # <<< 新增结束
+        self.total_interest_label.grid(row=3, column=0, padx=10, pady=(0,20))
         
         chart_frame = ctk.CTkFrame(main_frame)
         chart_frame.grid(row=8, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
@@ -119,7 +110,8 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         self.canvas = FigureCanvasTkAgg(self.fig, master=chart_frame)
         self.canvas.get_tk_widget().grid(row=1, column=0, sticky="nsew")
         self.plot_data = []
-        self.current_plot_info = []
+        self.current_plot_info = [] # FIX 2: 存储当前图表上的点信息
+
         self.annot = self.ax.annotate("", xy=(0,0), xytext=(20,20), textcoords="offset points", bbox=dict(boxstyle="round", fc="w", ec="k", lw=1), arrowprops=dict(arrowstyle="->"))
         self.annot.set_visible(False)
         self.canvas.mpl_connect("motion_notify_event", self.hover)
@@ -134,12 +126,14 @@ class VisualCompoundInterestCalculator(ctk.CTk):
             return {"bg_color": "#f0f0f0", "text_color": "#1c1c1c", "spine_color": "#565b5e", "grid_color": "#d6d6d6", "line_color": "#1f77b4", "annot_bg": "white", "annot_text": "black"}
 
     def hover(self, event):
+        # FIX 2: 核心逻辑修改 - 使用 self.current_plot_info
         if not self.current_plot_info or not event.inaxes == self.ax:
             if self.annot.get_visible():
                 self.annot.set_visible(False)
                 self.canvas.draw_idle()
             return
         
+        # 查找离鼠标最近的 *已绘制的数据点*
         distances = [abs(p['plot_x'] - event.xdata) for p in self.current_plot_info]
         idx = distances.index(min(distances))
         selected_point = self.current_plot_info[idx]
@@ -149,12 +143,13 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         plot_x = selected_point['plot_x']
         plot_y = amount
 
+        # FIX 3: 动态调整提示框位置
         xlim = self.ax.get_xlim()
-        if plot_x > (xlim[0] + xlim[1]) / 2:
-            self.annot.xyann = (-25, 25)
+        if plot_x > (xlim[0] + xlim[1]) / 2: # 如果点在右半边
+            self.annot.xyann = (-25, 25) # 偏移量向左
             self.annot.set_horizontalalignment('right')
-        else:
-            self.annot.xyann = (25, 25)
+        else: # 如果点在左半边
+            self.annot.xyann = (25, 25) # 偏移量向右
             self.annot.set_horizontalalignment('left')
 
         self.annot.xy = (plot_x, plot_y)
@@ -181,6 +176,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         self.canvas.draw_idle()
         
     def setup_initial_plot(self):
+        # ... (与之前版本相同) ...
         colors = self._get_plot_colors()
         self.ax.clear()
         self.fig.patch.set_facecolor(colors["bg_color"])
@@ -200,6 +196,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         self.canvas.draw()
         
     def calculate(self):
+        # ... (计算逻辑与之前版本相同，此处省略) ...
         self.calculate_button.configure(state="disabled", text="计算中...")
         self.update_idletasks()
         try:
@@ -221,28 +218,16 @@ class VisualCompoundInterestCalculator(ctk.CTk):
                 current_periods = day / days_per_period
                 amount = principal * ((1 + rate_per_period) ** current_periods)
                 self.plot_data.append((day, amount))
-            
             final_amount = self.plot_data[-1][1]
             total_interest = final_amount - principal
-            
-            # <<< 新增: 计算收益率
-            if principal > 0:
-                return_rate = (total_interest / principal) * 100
-                formatted_rate = f"{return_rate:,.2f} %"
-            else:
-                formatted_rate = "N/A" # 本金为0时无法计算
-            # <<< 新增结束
-            
             try:
                 formatted_amount = f"¥ {final_amount:,.2f}"
                 formatted_interest = f"¥ {total_interest:,.2f}"
             except (OverflowError, ValueError):
                 formatted_amount = f"¥ {final_amount:.2e}"
                 formatted_interest = f"¥ {total_interest:.2e}"
-                
             self.total_amount_label.configure(text=formatted_amount)
             self.total_interest_label.configure(text=formatted_interest)
-            self.return_rate_label.configure(text=formatted_rate) # <<< 新增: 更新收益率标签
             self.update_plot()
         except ValueError:
             messagebox.showerror("输入错误", "请输入有效的数字！")
@@ -260,12 +245,15 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         period_map = {"日": 1, "周": 7, "月": 30, "年": 365}
         step = period_map.get(period, 30)
 
+        # FIX 2: 生成并存储当前图表的采样点信息
         self.current_plot_info = []
         
+        # 优化采样，防止点过多导致卡顿
         num_points_to_plot = len(self.plot_data) / step
         if num_points_to_plot > 500:
             step = len(self.plot_data) // 500
             
+        # 添加第一个点
         self.current_plot_info.append({'day': 0, 'amount': self.plot_data[0][1], 'plot_x': 0})
         
         for i in range(step, len(self.plot_data), step):
@@ -273,6 +261,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
             plot_x = day / period_map[period]
             self.current_plot_info.append({'day': day, 'amount': amount, 'plot_x': plot_x})
             
+        # 确保最后一个点总是被包含
         last_day, last_amount = self.plot_data[-1]
         if last_day > 0 and (len(self.plot_data) - 1) % step != 0:
             plot_x = last_day / period_map[period]
@@ -281,6 +270,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         x_data = [p['plot_x'] for p in self.current_plot_info]
         y_data = [p['amount'] for p in self.current_plot_info]
         
+        # --- 绘图逻辑 (与之前版本相同) ---
         self.ax.clear()
         colors = self._get_plot_colors()
         self.fig.patch.set_facecolor(colors["bg_color"])
@@ -300,6 +290,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         self.fig.tight_layout()
         self.canvas.draw()
     
+    #...
     def update_rate_helper_text(self, selection):
         text_map = {"按日": "（这是每日收益率）", "按月": "（这是每月收益率）", "按年": "（这是每年收益率）"}
         self.rate_helper_label.configure(text=text_map.get(selection, ""))

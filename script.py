@@ -63,7 +63,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         ctk.CTkLabel(main_frame, text="复利计算频率", font=self.label_font).grid(row=2, column=0, padx=20, pady=10, sticky="w")
         self.frequency_selector = ctk.CTkSegmentedButton(main_frame, values=["按日", "按月", "按年"], font=self.label_font, command=self.update_rate_helper_text)
         self.frequency_selector.grid(row=2, column=1, padx=20, pady=10, sticky="ew")
-        self.frequency_selector.set("按日")
+        self.frequency_selector.set("按月")
         ctk.CTkLabel(main_frame, text="收益率 (%)", font=self.label_font).grid(row=3, column=0, padx=20, pady=(10,0), sticky="w")
         self.rate_entry = ctk.CTkEntry(main_frame, placeholder_text="例如: 10", font=self.label_font)
         self.rate_entry.grid(row=3, column=1, padx=20, pady=(10,0), sticky="ew")

@@ -54,7 +54,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         main_frame.grid_columnconfigure(1, weight=1)
         
         # --- UI组件部分 ---
-        title_label = ctk.CTkLabel(main_frame, text="复利的力量 (高级交互版)", font=self.title_font)
+        title_label = ctk.CTkLabel(main_frame, text="复利的力量", font=self.title_font)
         title_label.grid(row=0, column=0, columnspan=2, padx=20, pady=(10, 20))
         ctk.CTkLabel(main_frame, text="初始本金 (P)", font=self.label_font).grid(row=1, column=0, padx=20, pady=10, sticky="w")
         self.principal_entry = ctk.CTkEntry(main_frame, placeholder_text="例如: 1000", font=self.label_font)

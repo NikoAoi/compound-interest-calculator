@@ -12,7 +12,6 @@ from matplotlib.ticker import FuncFormatter
 # --- 解决Matplotlib中文和符号显示问题的函数 ---
 def set_matplotlib_font():
     try:
-        # FIX 1: 调整字体顺序，优先使用字符集更全的字体
         font_list = ['Microsoft YaHei', 'PingFang SC', 'SimHei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC']
         matplotlib.rcParams['font.sans-serif'] = font_list
         matplotlib.rcParams['font.family'] = 'sans-serif'
@@ -96,13 +95,11 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         
         ctk.CTkLabel(result_frame, text="总收益 (Total Interest)", font=self.result_font, text_color=("green", "#33FF99")).grid(row=2, column=0, pady=(10,5))
         self.total_interest_label = ctk.CTkLabel(result_frame, text="¥ 0.00", font=self.result_value_font, wraplength=600)
-        self.total_interest_label.grid(row=3, column=0, padx=10, pady=(0,10)) # <<< 修改: 调整了底部的padding
+        self.total_interest_label.grid(row=3, column=0, padx=10, pady=(0,10))
         
-        # <<< 新增: 收益率显示部分
         ctk.CTkLabel(result_frame, text="总收益率 (Return Rate)", font=self.result_font, text_color=("orange", "#FFA500")).grid(row=4, column=0, pady=(10,5))
         self.return_rate_label = ctk.CTkLabel(result_frame, text="0.00 %", font=self.result_value_font, wraplength=600)
         self.return_rate_label.grid(row=5, column=0, padx=10, pady=(0,20))
-        # <<< 新增结束
         
         chart_frame = ctk.CTkFrame(main_frame)
         chart_frame.grid(row=8, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
@@ -166,9 +163,20 @@ class VisualCompoundInterestCalculator(ctk.CTk):
         try:
             principal = float(self.principal_entry.get())
             profit = amount - principal
+            
+            # <<< 修改: 在此处计算并格式化当前点的收益率
+            if principal > 0:
+                rate_at_point = (profit / principal) * 100
+                rate_text = f"收益率: {rate_at_point:.2f} %"
+            else:
+                rate_text = "收益率: N/A"
+            
             text = (f"时间: {time_value:.1f} {period}\n"
                     f"本息合计: ¥{amount:,.2f}\n"
-                    f"总收益: ¥{profit:,.2f}")
+                    f"总收益: ¥{profit:,.2f}\n"
+                    f"{rate_text}") # <<< 修改: 将收益率文本添加到提示框
+            # <<< 修改结束
+
         except ValueError:
             text = f"{time_value:.1f} {period}\n¥{amount:,.2f}"
         
@@ -225,13 +233,11 @@ class VisualCompoundInterestCalculator(ctk.CTk):
             final_amount = self.plot_data[-1][1]
             total_interest = final_amount - principal
             
-            # <<< 新增: 计算收益率
             if principal > 0:
                 return_rate = (total_interest / principal) * 100
                 formatted_rate = f"{return_rate:,.2f} %"
             else:
-                formatted_rate = "N/A" # 本金为0时无法计算
-            # <<< 新增结束
+                formatted_rate = "N/A"
             
             try:
                 formatted_amount = f"¥ {final_amount:,.2f}"
@@ -242,7 +248,7 @@ class VisualCompoundInterestCalculator(ctk.CTk):
                 
             self.total_amount_label.configure(text=formatted_amount)
             self.total_interest_label.configure(text=formatted_interest)
-            self.return_rate_label.configure(text=formatted_rate) # <<< 新增: 更新收益率标签
+            self.return_rate_label.configure(text=formatted_rate)
             self.update_plot()
         except ValueError:
             messagebox.showerror("输入错误", "请输入有效的数字！")
